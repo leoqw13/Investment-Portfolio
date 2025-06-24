@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Investment Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: linear-gradient(to bottom right, #0f172a, #1e293b);
+            font-family: 'Helvetica Neue', sans-serif;
+        }
+
+        .tab-active {
+            background-color: #334155;
+            color: white;
+        }
+
+        .portfolio-card {
+            transition: all 0.3s ease;
+        }
+
+        .portfolio-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .active {background: #e5e5e5; border-radius: 9999px; color: #000000;}
+    </style>
+</head>
+
+<body>
+    <div class=" text-center mb-8">
+        <!-- Header -->
+        <header>
+            <div class="m-5">
+                <h1 class="text-4xl text-white font-bold">
+                    💸 Investment Portfolio
+                </h1>
+                <div class="mt-2">
+                    <span class="text-4xl font-semibold text-green-600" id="totalValue">$0.00</span>
+                    <span class="ml-2 text-sm text-gray-600" id="totalChange"></span>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex flex-col md:flex-row gap-6 m-8">
+            <!-- Chart Section -->
+            <div class="bg-gradient-to-br from-blue-900 to-indigo-900 rounded-2xl p-4 shadow-lg md:w-2/3">
+                <div class="chart-container mb-6">
+                    <h2 class="text-xl font-semibold mb-4 text-white">Performance Over Time</h2>
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Overview Section -->
+            <div class="bg-black/50 rounded-2xl p-4 md:w-1/3">
+                <h2 class="text-xl text-white font-semibold mb-4">Overview</h2>
+
+                <div class="mb-4 text-sm text-gray-500 leading-none border-2 border-gray-200 rounded-full inline-flex">
+                    
+                    <button id="listView" class="view-toggle inline-flex items-center px-4 py-2 rounded-r-full">
+                      <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fill-current w-4 h-4 mr-2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                      <span>List</span>
+                    </button>
+                    <button id="gridView" class="view-toggle inline-flex items-center px-4 py-2 rounded-l-full">
+                        <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fill-current w-4 h-4 mr-2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                        <span>Grid</span>
+                      </button>
+                  </div>
+                  
+                <!-- Portfolio Items -->
+                <section id="portfolioContainer" class="mb-4">
+                    <ul id="portfolioItems" class="space-y-4"></ul>
+                </section>
+
+                
+            </div>
+        </div>
+
+<script>
+            const investments = [
+                { symbol: 'AAPL', name: 'Apple Inc.', type: 'Stock', shares: 10, price: 175.25 },
+                { symbol: 'MSFT', name: 'Microsoft', type: 'Stock', shares: 8, price: 305.40 },
+                { symbol: 'USBOND', name: 'US Treasury Bond', type: 'Bond', shares: 5, price: 98.50 }
+            ];
+
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            const performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        data: [12000, 12500, 12300, 12800, 13000, 13500],
+                        borderColor: '#00f5d4',
+                        backgroundColor: 'rgba(0,245,212,0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        },
+                        x: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        }
+                    }
+                }
+            });
+
+            function renderPortfolio(view = 'list') {
+                const container = document.getElementById('portfolioItems');
+                container.innerHTML = '';
+                container.className = view === 'grid'
+                    ? 'grid grid-cols-1 sm:grid-cols-2 gap-4'
+                    : 'flex flex-col space-y-4';
+
+                investments.forEach(item => {
+                    const value = (item.shares * item.price).toFixed(2);
+                    const li = document.createElement('li');
+                    li.innerHTML = `<div class="portfolio-card rounded-lg shadow p-4 ${view === 'grid' ? 'border-2 border-white' : ''}">
+    
+            <div class="portfolio-card rounded-lg shadow p-4">
+                <div class="flex justify-between items-center text-white">
+                    <div class="text-left">
+                        <h3 class="font-semibold text-white">${item.symbol}</h3>
+                        <p class="text-sm text-white">${item.name}</p>
+                        <p class="text-sm text-white">${item.type}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-medium text-green-600">$${value}</p>
+                        <p class="text-sm">Shares: ${item.shares}</p>
+                        <p class="text-sm text-green-600" id="price-${item.symbol}">$${item.price.toFixed(2)}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+                    container.appendChild(li);
+                });
+            }
+
+
+            function updateTotal() {
+                const total = investments.reduce((sum, item) => sum + (item.shares * item.price), 0);
+                document.getElementById('totalValue').textContent = `$${total.toFixed(2)}`;
+            }
+
+            function simulatePriceUpdates() {
+                investments.forEach(item => {
+                    const change = (Math.random() - 0.5) * 2;
+                    item.price = Math.max(0, item.price + change);
+                    document.getElementById(`price-${item.symbol}`).textContent = `$${item.price.toFixed(2)}`;
+                });
+                updateTotal();
+            }
+
+            document.getElementById('listView').addEventListener('click', () => {
+                renderPortfolio('list');
+                toggleActiveButton('listView');
+            });
+            document.getElementById('gridView').addEventListener('click', () => {
+                renderPortfolio('grid');
+                toggleActiveButton('gridView');
+            });
+
+            function toggleActiveButton(activeId) {
+  document.querySelectorAll('.view-toggle').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  document.getElementById(activeId).classList.add('active');
+}
+document.getElementById('listView').classList.add('active'); 
+
+
+            renderPortfolio('list');
+            updateTotal();
+            setInterval(simulatePriceUpdates, 5000);
+        </script>
+</body>
+</html>
